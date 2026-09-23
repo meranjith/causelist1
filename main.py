@@ -4,15 +4,24 @@ with pdfplumber.open("input/Mahesh_Chowdhary.pdf") as pdf:
 
     for page_no, page in enumerate(pdf.pages, start=1):
 
-        italic_text = ""
+        tables = page.extract_tables()
 
-        for ch in page.chars:
+        print(f"\nPAGE {page_no}")
 
-            if "Italic" in ch["fontname"]:
-                italic_text += ch["text"]
+        for table in tables:
 
-        print("\n")
-        print("=" * 80)
-        print("PAGE", page_no)
-        print("=" * 80)
-        print(italic_text)
+            for row in table:
+
+                if row and len(row) >= 6:
+
+                    sl = row[0]
+
+                    case = row[1]
+
+                    if sl and case:
+
+                        print("SL:", sl)
+
+                        print("CASE:", case)
+
+                        print("---")
