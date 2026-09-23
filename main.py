@@ -1,6 +1,6 @@
 import pdfplumber
 
-with pdfplumber.open("Mahesh_Chowdhary.pdf") as pdf:
+with pdfplumber.open("input/Mahesh_Chowdhary.pdf") as pdf:
     for page in pdf.pages:
         tables = page.extract_tables()
 
