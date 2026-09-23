@@ -12,6 +12,12 @@ OUTPUT_FILE = "Consolidated_Cause_List.pdf"
 
 styles = getSampleStyleSheet()
 
+# Reduce paragraph spacing
+styles["BodyText"].leading = 11
+styles["BodyText"].spaceBefore = 0
+styles["BodyText"].spaceAfter = 0
+
+
 def main():
 
     print("STARTING PDF GENERATION...")
@@ -37,14 +43,16 @@ def main():
             ),
 
             Paragraph(
-                "<b>K S SATHISH AND OTHERS</b><br/><br/>"
-                "vs<br/><br/>"
+                "<b>K S SATHISH AND OTHERS</b><br/>"
+                "vs<br/>"
                 "STATE OF KARNATAKA AND OTHERS",
                 styles["BodyText"]
             ),
 
             "8",
+
             "1",
+
             "17",
 
             Paragraph(
@@ -87,18 +95,29 @@ def main():
         TableStyle([
             ("GRID", (0, 0), (-1, -1), 0.5, colors.black),
 
-            ("BACKGROUND", (0, 0), (-1, 0), colors.lightgrey),
+            ("BACKGROUND", (0, 0), (-1, 0),
+             colors.lightgrey),
 
-            ("FONTNAME", (0, 0), (-1, 0), "Helvetica-Bold"),
+            ("FONTNAME", (0, 0), (-1, 0),
+             "Helvetica-Bold"),
 
-            ("VALIGN", (0, 0), (-1, -1), "TOP"),
+            ("VALIGN", (0, 0), (-1, -1),
+             "TOP"),
 
-            ("FONTSIZE", (0, 0), (-1, -1), 8),
+            ("FONTSIZE", (0, 0), (-1, -1),
+             8),
 
-            ("LEFTPADDING", (0, 0), (-1, -1), 4),
-            ("RIGHTPADDING", (0, 0), (-1, -1), 4),
-            ("TOPPADDING", (0, 0), (-1, -1), 4),
-            ("BOTTOMPADDING", (0, 0), (-1, -1), 4),
+            ("LEFTPADDING", (0, 0), (-1, -1),
+             4),
+
+            ("RIGHTPADDING", (0, 0), (-1, -1),
+             4),
+
+            ("TOPPADDING", (0, 0), (-1, -1),
+             4),
+
+            ("BOTTOMPADDING", (0, 0), (-1, -1),
+             4),
         ])
     )
 
