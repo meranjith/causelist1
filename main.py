@@ -2,26 +2,19 @@ import pdfplumber
 
 with pdfplumber.open("input/Mahesh_Chowdhary.pdf") as pdf:
 
-    for page_no, page in enumerate(pdf.pages, start=1):
+    page = pdf.pages[4]   # PAGE 5
 
-        tables = page.extract_tables()
+    italic_lines = {}
 
-        print(f"\nPAGE {page_no}")
+    for ch in page.chars:
 
-        for table in tables:
+        if "Italic" not in ch["fontname"]:
+            continue
 
-            for row in table:
+        y = round(ch["top"])
 
-                if row and len(row) >= 6:
+        italic_lines.setdefault(y, "")
+        italic_lines[y] += ch["text"]
 
-                    sl = row[0]
-
-                    case = row[1]
-
-                    if sl and case:
-
-                        print("SL:", sl)
-
-                        print("CASE:", case)
-
-                        print("---")
+    for y in sorted(italic_lines):
+        print(y, "=>", italic_lines[y])
