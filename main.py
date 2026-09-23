@@ -4,9 +4,15 @@ with pdfplumber.open("input/Mahesh_Chowdhary.pdf") as pdf:
 
     page = pdf.pages[0]
 
-    fonts = set()
+    count = 0
 
     for ch in page.chars:
-        fonts.add(ch["fontname"])
 
-    print(fonts)
+        if "Italic" in ch["fontname"]:
+
+            print(ch["text"], ch["fontname"])
+
+            count += 1
+
+            if count > 200:
+                break
