@@ -1,6 +1,6 @@
 import pdfplumber
 
-pdf_file = "Mahesh_Chowdhary.pdf"
+pdf_file = "input/Mahesh_Chowdhary.pdf"
 
 with pdfplumber.open(pdf_file) as pdf:
     for i, page in enumerate(pdf.pages):
