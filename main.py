@@ -72,11 +72,11 @@ def extract_petitioner(text):
     if not text:
         return ""
 
-    lines = []
-
     text = str(text)
 
     text = text.replace("PET:", "")
+
+    lines = []
 
     for line in text.split("\n"):
 
@@ -87,8 +87,19 @@ def extract_petitioner(text):
 
         upper_line = line.upper()
 
-        # Advocate line
-        if re.match(r"^(A\s+)?[A-Z\s\.]+$", upper_line):
+        if "FOR P" in upper_line:
+            break
+
+        if "FOR R" in upper_line:
+            break
+
+        if "ADVOCATE" in upper_line:
+            break
+
+        if "AGA" in upper_line:
+            break
+
+        if "HCGP" in upper_line:
             break
 
         lines.append(line)
@@ -114,8 +125,8 @@ def extract_respondent(text):
         "FOR P",
         "ADVOCATE",
         "SD",
-        "NOTICE",
         "V/O",
+        "NOTICE"
     ]
 
     for line in text.split("\n"):
@@ -125,9 +136,14 @@ def extract_respondent(text):
         if not line:
             continue
 
-        upper_line = line.upper()
+        stop = False
 
-        if any(word in upper_line for word in stop_words):
+        for word in stop_words:
+            if word in line.upper():
+                stop = True
+                break
+
+        if stop:
             break
 
         lines.append(line)
@@ -246,22 +262,22 @@ def process_pdf(pdf_path, advocate):
                     res_upper = str(res_col).upper()
                     row_upper = row_text.upper()
 
-                   full_row = " ".join(
-    str(x)
-    for x in row
-    if x
-).upper()
+                    full_row = " ".join(
+                        str(x)
+                        for x in row
+                        if x
+                    ).upper()
 
-if advocate in full_row:
-
-    if re.search(
-        rf"{re.escape(advocate)}.*FOR R",
-        full_row
-    ):
-        bold_side = "RES"
-
-    else:
-        bold_side = "PET"
+                    if advocate in full_row:
+                    
+                        if re.search(
+                            rf"{re.escape(advocate)}.*FOR R",
+                            full_row
+                        ):
+                            bold_side = "RES"
+                    
+                        else:
+                            bold_side = "PET"
 
                     else:
                         if advocate in row_upper:
