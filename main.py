@@ -1,66 +1,56 @@
 import os
-import re
-import pdfplumber
-
 from reportlab.lib import colors
 from reportlab.lib.pagesizes import landscape, A4
-from reportlab.lib.styles import getSampleStyleSheet
-from reportlab.platypus import (
-    SimpleDocTemplate,
-    Table,
-    TableStyle,
-    Paragraph,
-)
+from reportlab.platypus import SimpleDocTemplate, Table, TableStyle
 
-INPUT_FOLDER = "input"
 OUTPUT_FILE = "Consolidated_Cause_List.pdf"
 
-styles = getSampleStyleSheet()
+def main():
 
-records = []
+    print("STARTING...")
 
+    data = [
+        [
+            "SL NO",
+            "CASE NUMBER",
+            "CASE NAME",
+            "CH",
+            "LIST",
+            "SL NO",
+            "STATUS",
+            "JUDGES"
+        ],
+        [
+            "1",
+            "WP 6554/2026",
+            "K S SATHISH AND OTHERS\nvs\nSTATE OF KARNATAKA AND OTHERS",
+            "8",
+            "1",
+            "17",
+            "PRELIMINARY HEARING - B GROUP",
+            "THE HONBLE JUSTICE S SUNIL DUTT YADAV"
+        ]
+    ]
 
-def clean(text):
-    if not text:
-        return ""
-
-    text = text.replace("\n", " ")
-    text = re.sub(r"\s+", " ", text)
-
-    return text.strip()
-
-
-def normalize_advocate(filename):
-
-    return (
-        os.path.splitext(filename)[0]
-        .replace("_", " ")
-        .upper()
-        .strip()
+    doc = SimpleDocTemplate(
+        OUTPUT_FILE,
+        pagesize=landscape(A4)
     )
 
-
-def extract_case_no(text):
-
-    if not text:
-        return ""
-
-    m = re.search(
-        r'(WP|CRL\.?P|WA|WP\(C\)|RSA|MFA|CCC)\s+\d+/\d+',
-        text,
-        re.I
+    table = Table(
+        data,
+        colWidths=[40, 80, 250, 35, 35, 35, 180, 220]
     )
 
-    return m.group(0) if m else clean(text.split("\n")[0])
+    table.setStyle(TableStyle([
+        ("GRID", (0, 0), (-1, -1), 0.5, colors.black),
+        ("BACKGROUND", (0, 0), (-1, 0), colors.lightgrey),
+        ("FONTNAME", (0, 0), (-1, 0), "Helvetica-Bold"),
+    ]))
 
+    doc.build([table])
 
-def extract_party(text, prefix):
+    print("PDF CREATED:", OUTPUT_FILE)
 
-    if not text:
-        return ""
-
-    m = re.search(
-        rf'{prefix}\s*:\s*(.*)',
-        text,
-        re.I | re.S
-    )
+if __name__ == "__main__":
+    main()
