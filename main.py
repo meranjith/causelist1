@@ -2,6 +2,10 @@ import os
 from reportlab.lib import colors
 from reportlab.lib.pagesizes import landscape, A4
 from reportlab.platypus import SimpleDocTemplate, Table, TableStyle
+from reportlab.platypus import Paragraph
+from reportlab.lib.styles import getSampleStyleSheet
+
+styles = getSampleStyleSheet()
 
 OUTPUT_FILE = "Consolidated_Cause_List.pdf"
 
@@ -17,13 +21,16 @@ def main():
             "CH",
             "LIST",
             "SL NO",
-            "STATUS",
-            "JUDGES"
+            Paragraph(status, styles["BodyText"]),
+            Paragraph(judge, styles["BodyText"])
         ],
         [
             "1",
             "WP 6554/2026",
-            "K S SATHISH AND OTHERS\nvs\nSTATE OF KARNATAKA AND OTHERS",
+            Paragraph(
+    "K S SATHISH AND OTHERS<br/>vs<br/>STATE OF KARNATAKA AND OTHERS",
+    styles["BodyText"]
+),
             "8",
             "1",
             "17",
@@ -38,9 +45,18 @@ def main():
     )
 
     table = Table(
-        data,
-        colWidths=[40, 80, 250, 35, 35, 35, 180, 220]
-    )
+    data,
+    colWidths=[
+        30,   # SL NO
+        80,   # CASE NUMBER
+        220,  # CASE NAME
+        30,   # CH
+        30,   # LIST
+        30,   # SL NO
+        150,  # STATUS
+        160   # JUDGES
+    ]
+)
 
     table.setStyle(TableStyle([
         ("GRID", (0, 0), (-1, -1), 0.5, colors.black),
