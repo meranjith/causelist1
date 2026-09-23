@@ -9,7 +9,7 @@ from reportlab.platypus import (
     SimpleDocTemplate,
     Table,
     TableStyle,
-    Paragraph,
+    Paragraph
 )
 
 INPUT_FOLDER = "input"
@@ -25,7 +25,7 @@ records = []
 
 
 def clean(text):
-    if not text:
+    if text is None:
         return ""
 
     text = str(text)
@@ -50,12 +50,12 @@ def extract_case_number(text):
     text = clean(text)
 
     patterns = [
-        r'WP\s+\d+/\d+',
-        r'CRL\.?P\s+\d+/\d+',
-        r'WA\s+\d+/\d+',
-        r'RSA\s+\d+/\d+',
-        r'MFA\s+\d+/\d+',
-        r'CCC\s+\d+/\d+',
+        r"WP\s+\d+/\d+",
+        r"CRL\.?P\s+\d+/\d+",
+        r"WA\s+\d+/\d+",
+        r"RSA\s+\d+/\d+",
+        r"MFA\s+\d+/\d+",
+        r"CCC\s+\d+/\d+",
     ]
 
     for pattern in patterns:
@@ -87,14 +87,321 @@ def extract_petitioner(text):
 
         upper_line = line.upper()
 
-        stop_words = [
-            " FOR P",
-            " FOR R",
-            "ADVOCATE",
-            "AGA",
-            "HCGP",
-            "SD",
-            "V/O",
-        ]
+        if "FOR P" in upper_line:
+            break
 
-        if any(word in upper_
+        if "FOR R" in upper_line:
+            break
+
+        if "ADVOCATE" in upper_line:
+            break
+
+        if "AGA" in upper_line:
+            break
+
+        if "HCGP" in upper_line:
+            break
+
+        lines.append(line)
+
+    return clean(" ".join(lines))
+
+
+def extract_respondent(text):
+
+    if not text:
+        return ""
+
+    text = str(text)
+
+    text = text.replace("RES:", "")
+
+    lines = []
+
+    stop_words = [
+        "AGA",
+        "HCGP",
+        "FOR R",
+        "FOR P",
+        "ADVOCATE",
+        "SD",
+        "V/O",
+        "NOTICE"
+    ]
+
+    for line in text.split("\n"):
+
+        line = clean(line)
+
+        if not line:
+            continue
+
+        stop = False
+
+        for word in stop_words:
+            if word in line.upper():
+                stop = True
+                break
+
+        if stop:
+            break
+
+        lines.append(line)
+
+    return clean(" ".join(lines))
+
+
+def build_case_name(row):
+
+    pet = row["petitioner"]
+    res = row["respondent"]
+
+    if row["bold_side"] == "PET":
+        pet = f"<b>{pet}</b>"
+
+    if row["bold_side"] == "RES":
+        res = f"<b>{res}</b>"
+
+    return Paragraph(
+        f"{pet}<br/>vs<br/>{res}",
+        styles["BodyText"]
+    )
+
+
+def process_pdf(pdf_path, advocate):
+
+    print("Processing:", pdf_path)
+
+    current_judge = ""
+    current_status = ""
+    current_ch = ""
+    current_list = ""
+
+    with pdfplumber.open(pdf_path) as pdf:
+
+        for page in pdf.pages:
+
+            tables = page.extract_tables()
+
+            if not tables:
+                continue
+
+            for table in tables:
+
+                for row in table:
+
+                    if not row:
+                        continue
+
+                    row_text = " ".join(
+                        str(x)
+                        for x in row
+                        if x
+                    )
+
+                    upper_text = row_text.upper()
+
+                    # Judge
+                    if "THE HON" in upper_text:
+                        current_judge = clean(row_text)
+
+                    # Hall / List
+                    if "COURT HALL NO" in upper_text:
+
+                        ch_match = re.search(
+                            r"COURT HALL NO\s*:\s*(\d+)",
+                            row_text,
+                            re.I
+                        )
+
+                        list_match = re.search(
+                            r"CAUSE LIST NO\.?\s*(\d+)",
+                            row_text,
+                            re.I
+                        )
+
+                        if ch_match:
+                            current_ch = ch_match.group(1)
+
+                        if list_match:
+                            current_list = list_match.group(1)
+
+                    # Status
+                    status_keywords = [
+                        "PRELIMINARY HEARING",
+                        "ADMISSION",
+                        "ORDERS",
+                        "FURTHER HEARING",
+                        "HEARING -"
+                    ]
+
+                    for keyword in status_keywords:
+                        if keyword in upper_text:
+                            current_status = clean(row_text)
+
+                    # Case row
+                    if len(row) < 6:
+                        continue
+
+                    sl_no = clean(row[0])
+
+                    if not sl_no.isdigit():
+                        continue
+
+                    case_number = extract_case_number(row[1])
+
+                    pet_col = row[3] if len(row) > 3 else ""
+                    res_col = row[5] if len(row) > 5 else ""
+
+                    petitioner = extract_petitioner(pet_col)
+                    respondent = extract_respondent(res_col)
+
+                    bold_side = ""
+
+                    pet_upper = str(pet_col).upper()
+                    res_upper = str(res_col).upper()
+                    row_upper = row_text.upper()
+
+                    if advocate in pet_upper:
+                        bold_side = "PET"
+
+                    elif advocate in res_upper:
+                        bold_side = "RES"
+
+                    else:
+                        if advocate in row_upper:
+
+                            if "FOR R" in row_upper:
+                                bold_side = "RES"
+
+                            elif "FOR P" in row_upper:
+                                bold_side = "PET"
+
+                    records.append({
+                        "sl_no": sl_no,
+                        "case_number": case_number,
+                        "petitioner": petitioner,
+                        "respondent": respondent,
+                        "bold_side": bold_side,
+                        "ch": current_ch,
+                        "list": current_list,
+                        "status": current_status,
+                        "judge": current_judge
+                    })
+
+
+def generate_pdf():
+
+    data = [[
+        "SL NO",
+        "CASE NUMBER",
+        "CASE NAME",
+        "CH",
+        "LIST",
+        "SL NO",
+        "STATUS",
+        "JUDGES"
+    ]]
+
+    for idx, row in enumerate(records, start=1):
+
+        data.append([
+            str(idx),
+
+            Paragraph(
+                f"<b>{row['case_number']}</b>",
+                styles["BodyText"]
+            ),
+
+            build_case_name(row),
+
+            row["ch"],
+            row["list"],
+            row["sl_no"],
+
+            Paragraph(
+                row["status"],
+                styles["BodyText"]
+            ),
+
+            Paragraph(
+                row["judge"],
+                styles["BodyText"]
+            )
+        ])
+
+    doc = SimpleDocTemplate(
+        OUTPUT_FILE,
+        pagesize=landscape(A4),
+        leftMargin=10,
+        rightMargin=10,
+        topMargin=10,
+        bottomMargin=10
+    )
+
+    table = Table(
+        data,
+        repeatRows=1,
+        colWidths=[
+            35,
+            90,
+            220,
+            35,
+            35,
+            35,
+            150,
+            170
+        ]
+    )
+
+    table.setStyle(
+        TableStyle([
+            ("GRID", (0, 0), (-1, -1), 0.5, colors.black),
+            ("BACKGROUND", (0, 0), (-1, 0), colors.lightgrey),
+            ("FONTNAME", (0, 0), (-1, 0), "Helvetica-Bold"),
+            ("VALIGN", (0, 0), (-1, -1), "TOP"),
+            ("FONTSIZE", (0, 0), (-1, -1), 8)
+        ])
+    )
+
+    doc.build([table])
+
+
+def main():
+
+    print("STARTING")
+
+    if not os.path.exists(INPUT_FOLDER):
+        print("input folder not found")
+        return
+
+    files = [
+        f for f in os.listdir(INPUT_FOLDER)
+        if f.lower().endswith(".pdf")
+    ]
+
+    print("PDF COUNT:", len(files))
+
+    for file in files:
+
+        advocate = get_advocate_name(file)
+
+        path = os.path.join(
+            INPUT_FOLDER,
+            file
+        )
+
+        process_pdf(
+            path,
+            advocate
+        )
+
+    print("RECORDS:", len(records))
+
+    generate_pdf()
+
+    print("PDF CREATED:", OUTPUT_FILE)
+
+
+if __name__ == "__main__":
+    main()
