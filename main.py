@@ -310,39 +310,41 @@ def process_pdf(pdf_path, advocate):
                         if x
                     ).upper()
                     
-                    advocate_upper = advocate.upper()
+                    advocate_patterns = [
+                        advocate.upper(),
+                        f"A {advocate.upper()}",
+                    ]
                     
-                    if advocate_upper in full_row:
+                    for adv in advocate_patterns:
                     
-                        if re.search(
-                            rf"{re.escape(advocate_upper)}.*FOR R",
-                            full_row
-                        ):
+                        if adv not in full_row:
+                            continue
+                    
+                        after_adv = full_row.split(adv, 1)[1]
+                    
+                        if "FOR R" in after_adv:
                             bold_side = "RES"
+                            break
                     
-                        elif re.search(
-                            rf"{re.escape(advocate_upper)}.*FOR P",
-                            full_row
-                        ):
-                            bold_side = "PET"
-                    
-                        elif re.search(
-                            rf"{re.escape(advocate_upper)}.*FOR RESPONDENT",
-                            full_row
-                        ):
+                        if "FOR RESPONDENT" in after_adv:
                             bold_side = "RES"
+                            break
                     
-                        elif re.search(
-                            rf"{re.escape(advocate_upper)}.*FOR PETITIONER",
-                            full_row
-                        ):
+                        if "FOR P" in after_adv:
                             bold_side = "PET"
+                            break
                     
-                        elif advocate_upper in str(pet_col).upper():
+                        if "FOR PETITIONER" in after_adv:
                             bold_side = "PET"
+                            break
                     
-                        elif advocate_upper in str(res_col).upper():
+                        if adv in str(pet_col).upper():
+                            bold_side = "PET"
+                            break
+                    
+                        if adv in str(res_col).upper():
                             bold_side = "RES"
+                            break
 
                     records.append({
                         "sl_no": sl_no,
