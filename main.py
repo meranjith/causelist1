@@ -125,19 +125,6 @@ def extract_petitioner(text):
         ):
             break
 
-        words = line.split()
-
-        # likely advocate name line
-        if (
-            len(words) <= 5
-            and all(
-                w.replace(".", "").isalpha()
-                for w in words
-            )
-            and line.upper() == line
-        ):
-            break
-        
         lines.append(line)
 
     result = clean(" ".join(lines))
@@ -193,19 +180,6 @@ def extract_respondent(text):
         if stop:
             break
 
-        words = line.split()
-
-        # likely advocate name line
-        if (
-            len(words) <= 5
-            and all(
-                w.replace(".", "").isalpha()
-                for w in words
-            )
-            and line.upper() == line
-        ):
-            break
-        
         lines.append(line)
 
     result = clean(" ".join(lines))
