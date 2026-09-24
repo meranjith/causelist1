@@ -32,6 +32,13 @@ styles["BodyText"].spaceAfter = 0
 
 records = []
 
+def extract_italic_text(page):
+    italic_chars = []
+    for ch in page.chars:
+        font = ch.get("fontname", "")
+        if "Italic" in font:
+            italic_chars.append(ch)
+    return italic_chars
 
 def clean(text):
     if text is None:
