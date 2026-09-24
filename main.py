@@ -257,8 +257,12 @@ def process_pdf(pdf_path, advocate):
         for page in pdf.pages:
             italic_rows = extract_case_name_blocks(page)
             
-            for row in italic_rows:
-                print(row)
+            print("========== ITALIC ==========")
+            
+            for r in italic_rows:
+            
+                if "PET:" in r or "RES:" in r:
+                    print(r)
 
             tables = page.extract_tables()
 
