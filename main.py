@@ -304,30 +304,15 @@ def process_pdf(pdf_path, advocate):
 
                     bold_side = ""
 
-                    full_row = " ".join(
-                        str(x)
-                        for x in row
-                        if x
-                    ).upper()
-
+                    pet_text_upper = str(pet_col).upper()
+                    res_text_upper = str(res_col).upper()
+                    
                     advocate_upper = advocate.upper()
-
-                    if "FOR R" in full_row:
-                        bold_side = "RES"
-
-                    elif "FOR RESPONDENT" in full_row:
-                        bold_side = "RES"
-
-                    elif "FOR P" in full_row:
+                    
+                    if advocate_upper in pet_text_upper:
                         bold_side = "PET"
-
-                    elif "FOR PETITIONER" in full_row:
-                        bold_side = "PET"
-
-                    elif advocate_upper in str(pet_col).upper():
-                        bold_side = "PET"
-
-                    elif advocate_upper in str(res_col).upper():
+                    
+                    elif advocate_upper in res_text_upper:
                         bold_side = "RES"
 
                     records.append({
