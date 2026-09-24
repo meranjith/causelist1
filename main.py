@@ -311,21 +311,21 @@ def process_pdf(pdf_path, advocate):
             
                     while j < len(italic_rows):
                 
-                    left_next, right_next = italic_rows[j]
-                
-                    if (
-                        "PET:" in left_next
-                        or "RES:" in right_next
-                    ):
-                        break
-                
-                    if left_next.strip():
-                        pet_part += " " + left_next.strip()
-                
-                    if right_next.strip():
-                        res_part += " " + right_next.strip()
-                
-                    j += 1
+                        left_next, right_next = italic_rows[j]
+                    
+                        if (
+                            "PET:" in left_next
+                            or "RES:" in right_next
+                        ):
+                            break
+                    
+                        if left_next.strip():
+                            pet_part += " " + left_next.strip()
+                    
+                        if right_next.strip():
+                            res_part += " " + right_next.strip()
+                    
+                        j += 1
             
                     italic_pairs.append(
                         (
