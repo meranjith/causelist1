@@ -264,6 +264,32 @@ def process_pdf(pdf_path, advocate):
                 if "PET:" in r or "RES:" in r:
                     print(r)
 
+            italic_pairs = []
+
+            current_pet = ""
+            current_res = ""
+            
+            for r in italic_rows:
+            
+                if "PET:" in r and "RES:" in r:
+            
+                    pet_part = r.split("RES:")[0]
+                    res_part = r.split("RES:")[1]
+            
+                    pet_part = pet_part.replace("PET:", "").strip()
+                    res_part = res_part.strip()
+            
+                    current_pet = pet_part
+                    current_res = res_part
+            
+                    italic_pairs.append(
+                        (
+                            current_pet,
+                            current_res
+                        )
+                    )
+                    
+
             tables = page.extract_tables()
 
             if not tables:
@@ -334,10 +360,19 @@ def process_pdf(pdf_path, advocate):
                     pet_col = row[3] if len(row) > 3 else ""
                     res_col = row[5] if len(row) > 5 else ""
 
+                    if italic_pairs:
+
+                    petitioner = italic_pairs[0][0]
+                    respondent = italic_pairs[0][1]
+                
+                    italic_pairs.pop(0)
+                
+                else:
+                
                     petitioner = extract_petitioner(
                         pet_col
                     )
-
+                
                     respondent = extract_respondent(
                         res_col
                     )
