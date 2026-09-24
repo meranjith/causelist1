@@ -54,34 +54,47 @@ def extract_case_name_blocks(page):
 
     italic_chars = extract_italic_text(page)
 
-    lines = {}
+    rows = {}
 
     for ch in italic_chars:
 
         y = round(ch["top"])
 
-        if y not in lines:
-            lines[y] = []
+        if y not in rows:
+            rows[y] = []
 
-        lines[y].append(ch)
+        rows[y].append(ch)
 
-    rows = []
+    final_rows = []
 
-    for y in sorted(lines):
+    for y in sorted(rows):
 
         chars = sorted(
-            lines[y],
+            rows[y],
             key=lambda c: c["x0"]
         )
 
-        line_text = "".join(
-            c["text"]
-            for c in chars
+        left = []
+        right = []
+
+        for ch in chars:
+
+            if ch["x0"] < 300:
+                left.append(ch["text"])
+            else:
+                right.append(ch["text"])
+
+        left_text = "".join(left).strip()
+        right_text = "".join(right).strip()
+
+        final_rows.append(
+            (
+                left_text,
+                right_text
+            )
         )
 
-        rows.append(line_text)
-
-    return rows
+    return final_rows
 
 def get_advocate_name(filename):
     return (
@@ -259,10 +272,10 @@ def process_pdf(pdf_path, advocate):
             
             print("========== ITALIC ==========")
             
-            for r in italic_rows:
+            for left_text, right_text in italic_rows:
             
-                if "PET:" in r or "RES:" in r:
-                    print(r)
+                print("LEFT =", left_text)
+                print("RIGHT =", right_text)
 
             italic_pairs = []
 
