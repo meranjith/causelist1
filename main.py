@@ -56,24 +56,17 @@ def get_advocate_name(filename):
 
 def extract_case_number(text):
 
-    text = clean(text)
+    text = str(text)
 
-    patterns = [
-        r"WP\s+\d+/\d+",
-        r"CRL\.?P\s+\d+/\d+",
-        r"WA\s+\d+/\d+",
-        r"RSA\s+\d+/\d+",
-        r"MFA\s+\d+/\d+",
-        r"CCC\s+\d+/\d+",
-    ]
+    m = re.search(
+        r"\b[A-Z\.]{2,10}\s+\d+/\d+\b",
+        text
+    )
 
-    for pattern in patterns:
-        m = re.search(pattern, text, re.I)
+    if m:
+        return m.group(0)
 
-        if m:
-            return m.group(0)
-
-    return text
+    return text.split("\n")[0].strip()
 
 
 def strip_advocates(value):
