@@ -50,6 +50,38 @@ def clean(text):
 
     return text.strip()
 
+def extract_case_name_blocks(page):
+
+    italic_chars = extract_italic_text(page)
+
+    lines = {}
+
+    for ch in italic_chars:
+
+        y = round(ch["top"])
+
+        if y not in lines:
+            lines[y] = []
+
+        lines[y].append(ch)
+
+    rows = []
+
+    for y in sorted(lines):
+
+        chars = sorted(
+            lines[y],
+            key=lambda c: c["x0"]
+        )
+
+        line_text = "".join(
+            c["text"]
+            for c in chars
+        )
+
+        rows.append(line_text)
+
+    return rows
 
 def get_advocate_name(filename):
     return (
@@ -213,6 +245,11 @@ def build_case_name(row):
 
 def process_pdf(pdf_path, advocate):
 
+    italic_rows = extract_case_name_blocks(page)
+    
+    for row in italic_rows:
+        print(row)
+    
     print("Processing:", pdf_path)
 
     current_judge = ""
