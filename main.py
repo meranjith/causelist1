@@ -304,16 +304,45 @@ def process_pdf(pdf_path, advocate):
 
                     bold_side = ""
 
-                    pet_text_upper = str(pet_col).upper()
-                    res_text_upper = str(res_col).upper()
+                    full_row = " ".join(
+                        str(x)
+                        for x in row
+                        if x
+                    ).upper()
                     
                     advocate_upper = advocate.upper()
                     
-                    if advocate_upper in pet_text_upper:
-                        bold_side = "PET"
+                    if advocate_upper in full_row:
                     
-                    elif advocate_upper in res_text_upper:
-                        bold_side = "RES"
+                        if re.search(
+                            rf"{re.escape(advocate_upper)}.*FOR R",
+                            full_row
+                        ):
+                            bold_side = "RES"
+                    
+                        elif re.search(
+                            rf"{re.escape(advocate_upper)}.*FOR P",
+                            full_row
+                        ):
+                            bold_side = "PET"
+                    
+                        elif re.search(
+                            rf"{re.escape(advocate_upper)}.*FOR RESPONDENT",
+                            full_row
+                        ):
+                            bold_side = "RES"
+                    
+                        elif re.search(
+                            rf"{re.escape(advocate_upper)}.*FOR PETITIONER",
+                            full_row
+                        ):
+                            bold_side = "PET"
+                    
+                        elif advocate_upper in str(pet_col).upper():
+                            bold_side = "PET"
+                    
+                        elif advocate_upper in str(res_col).upper():
+                            bold_side = "RES"
 
                     records.append({
                         "sl_no": sl_no,
