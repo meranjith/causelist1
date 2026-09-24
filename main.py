@@ -32,27 +32,6 @@ styles["BodyText"].spaceAfter = 0
 
 records = []
 
-def extract_italic_text(page):
-
-    italic_chars = []
-
-    for ch in page.chars:
-
-        font = ch.get("fontname", "")
-
-        if "Italic" in font:
-
-            print(
-                ch["text"],
-                "X=",
-                round(ch["x0"]),
-                "Y=",
-                round(ch["top"])
-            )
-
-            italic_chars.append(ch)
-
-    return italic_chars
 
 def clean(text):
     if text is None:
@@ -64,51 +43,6 @@ def clean(text):
 
     return text.strip()
 
-def extract_case_name_blocks(page):
-
-    italic_chars = extract_italic_text(page)
-
-    rows = {}
-
-    for ch in italic_chars:
-
-        y = round(ch["top"])
-
-        if y not in rows:
-            rows[y] = []
-
-        rows[y].append(ch)
-
-    final_rows = []
-
-    for y in sorted(rows):
-
-        chars = sorted(
-            rows[y],
-            key=lambda c: c["x0"]
-        )
-
-        left = []
-        right = []
-
-        for ch in chars:
-
-            if ch["x0"] < 300:
-                left.append(ch["text"])
-            else:
-                right.append(ch["text"])
-
-        left_text = "".join(left).strip()
-        right_text = "".join(right).strip()
-
-        final_rows.append(
-            (
-                left_text,
-                right_text
-            )
-        )
-
-    return final_rows
 
 def get_advocate_name(filename):
     return (
@@ -271,7 +205,7 @@ def build_case_name(row):
 
 
 def process_pdf(pdf_path, advocate):
-    
+
     print("Processing:", pdf_path)
 
     current_judge = ""
@@ -282,80 +216,6 @@ def process_pdf(pdf_path, advocate):
     with pdfplumber.open(pdf_path) as pdf:
 
         for page in pdf.pages:
-            italic_rows = extract_case_name_blocks(page)
-            
-            print("========== ITALIC ==========")
-            
-            for idx, (left_text, right_text) in enumerate(italic_rows):
-            
-                print("ROW", idx)
-                print("LEFT =", repr(left_text))
-                print("RIGHT =", repr(right_text))
-
-            italic_pairs = []
-
-            i = 0
-            
-            while i < len(italic_rows):
-            
-                current = italic_rows[i]
-            
-                left_text, right_text = italic_rows[i]
-                
-                if "PET:" in left_text and "RES:" in right_text:
-            
-                    pet_part = left_text.replace(
-                    "PET:",
-                    ""
-                    ).strip()
-                    
-                    res_part = right_text.replace(
-                        "RES:",
-                        ""
-                    ).strip()
-            
-                    pet_part = pet_part.replace(
-                        "PET:",
-                        ""
-                    ).strip()
-            
-                    res_part = res_part.strip()
-            
-                    # keep reading continuation lines
-                    j = i + 1
-            
-                    while j < len(italic_rows):
-                
-                        left_next, right_next = italic_rows[j]
-                    
-                        if (
-                            "PET:" in left_next
-                            or "RES:" in right_next
-                        ):
-                            break
-                    
-                        if left_next.strip():
-                            pet_part += " " + left_next.strip()
-                    
-                        if right_next.strip():
-                            res_part += " " + right_next.strip()
-                    
-                        j += 1
-            
-                    italic_pairs.append(
-                        (
-                            clean(pet_part),
-                            clean(res_part)
-                        )
-                    )
-                    print("PAIR PET =", clean(pet_part))
-                    print("PAIR RES =", clean(res_part))
-            
-                    i = j
-            
-                else:
-                    i += 1
-                    
 
             tables = page.extract_tables()
 
@@ -427,22 +287,13 @@ def process_pdf(pdf_path, advocate):
                     pet_col = row[3] if len(row) > 3 else ""
                     res_col = row[5] if len(row) > 5 else ""
 
-                    if italic_pairs:
+                    petitioner = extract_petitioner(
+                        pet_col
+                    )
 
-                        petitioner = italic_pairs[0][0]
-                        respondent = italic_pairs[0][1]
-                    
-                        italic_pairs.pop(0)
-                
-                    else:
-                    
-                        petitioner = extract_petitioner(
-                            pet_col
-                        )
-                    
-                        respondent = extract_respondent(
-                            res_col
-                        )
+                    respondent = extract_respondent(
+                        res_col
+                    )
 
                     bold_side = ""
 
