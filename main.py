@@ -272,10 +272,11 @@ def process_pdf(pdf_path, advocate):
             
             print("========== ITALIC ==========")
             
-            for left_text, right_text in italic_rows:
+            for idx, (left_text, right_text) in enumerate(italic_rows):
             
-                print("LEFT =", left_text)
-                print("RIGHT =", right_text)
+                print("ROW", idx)
+                print("LEFT =", repr(left_text))
+                print("RIGHT =", repr(right_text))
 
             italic_pairs = []
 
