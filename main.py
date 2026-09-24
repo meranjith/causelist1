@@ -304,47 +304,37 @@ def process_pdf(pdf_path, advocate):
 
                     bold_side = ""
 
-                    full_row = " ".join(
-                        str(x)
-                        for x in row
-                        if x
-                    ).upper()
+                    pet_text = str(pet_col).upper()
+                    res_text = str(res_col).upper()
                     
-                    advocate_patterns = [
-                        advocate.upper(),
-                        f"A {advocate.upper()}",
-                    ]
+                    if advocate.upper() in pet_text:
+                        bold_side = "PET"
                     
-                    for adv in advocate_patterns:
+                    elif advocate.upper() in res_text:
+                        bold_side = "RES"
                     
-                        if adv not in full_row:
-                            continue
+                    else:
+                        row_text_upper = row_text.upper()
                     
-                        after_adv = full_row.split(adv, 1)[1]
+                        if advocate.upper() in row_text_upper:
                     
-                        if "FOR R" in after_adv:
-                            bold_side = "RES"
-                            break
+                            adv_pos = row_text_upper.find(
+                                advocate.upper()
+                            )
                     
-                        if "FOR RESPONDENT" in after_adv:
-                            bold_side = "RES"
-                            break
+                            res_pos = row_text_upper.find(
+                                "RES:"
+                            )
                     
-                        if "FOR P" in after_adv:
-                            bold_side = "PET"
-                            break
+                            pet_pos = row_text_upper.find(
+                                "PET:"
+                            )
                     
-                        if "FOR PETITIONER" in after_adv:
-                            bold_side = "PET"
-                            break
+                            if res_pos != -1 and adv_pos > res_pos:
+                                bold_side = "RES"
                     
-                        if adv in str(pet_col).upper():
-                            bold_side = "PET"
-                            break
-                    
-                        if adv in str(res_col).upper():
-                            bold_side = "RES"
-                            break
+                            elif pet_pos != -1 and adv_pos > pet_pos:
+                                bold_side = "PET"
 
                     records.append({
                         "sl_no": sl_no,
