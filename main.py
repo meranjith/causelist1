@@ -266,28 +266,56 @@ def process_pdf(pdf_path, advocate):
 
             italic_pairs = []
 
-            current_pet = ""
-            current_res = ""
+            i = 0
             
-            for r in italic_rows:
+            while i < len(italic_rows):
             
-                if "PET:" in r and "RES:" in r:
+                current = italic_rows[i]
             
-                    pet_part = r.split("RES:")[0]
-                    res_part = r.split("RES:")[1]
+                if "PET:" in current and "RES:" in current:
             
-                    pet_part = pet_part.replace("PET:", "").strip()
+                    pet_part = current.split("RES:")[0]
+                    res_part = current.split("RES:")[1]
+            
+                    pet_part = pet_part.replace(
+                        "PET:",
+                        ""
+                    ).strip()
+            
                     res_part = res_part.strip()
             
-                    current_pet = pet_part
-                    current_res = res_part
+                    # keep reading continuation lines
+                    j = i + 1
+            
+                    while j < len(italic_rows):
+            
+                        nxt = italic_rows[j]
+            
+                        if "PET:" in nxt or "RES:" in nxt:
+                            break
+            
+                        tokens = nxt.split()
+            
+                        mid = len(tokens) // 2
+            
+                        pet_part += " " + " ".join(tokens[:mid])
+                        res_part += " " + " ".join(tokens[mid:])
+            
+                        j += 1
             
                     italic_pairs.append(
                         (
-                            current_pet,
-                            current_res
+                            clean(pet_part),
+                            clean(res_part)
                         )
                     )
+                    print("PAIR PET =", clean(pet_part))
+                    print("PAIR RES =", clean(res_part))
+            
+                    i = j
+            
+                else:
+                    i += 1
                     
 
             tables = page.extract_tables()
