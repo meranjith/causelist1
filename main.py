@@ -285,10 +285,19 @@ def process_pdf(pdf_path, advocate):
             
                 current = italic_rows[i]
             
-                if "PET:" in current and "RES:" in current:
+                left_text, right_text = italic_rows[i]
+                
+                if "PET:" in left_text and "RES:" in right_text:
             
-                    pet_part = current.split("RES:")[0]
-                    res_part = current.split("RES:")[1]
+                    pet_part = left_text.replace(
+                    "PET:",
+                    ""
+                ).strip()
+                
+                res_part = right_text.replace(
+                    "RES:",
+                    ""
+                ).strip()
             
                     pet_part = pet_part.replace(
                         "PET:",
@@ -301,20 +310,22 @@ def process_pdf(pdf_path, advocate):
                     j = i + 1
             
                     while j < len(italic_rows):
-            
-                        nxt = italic_rows[j]
-            
-                        if "PET:" in nxt or "RES:" in nxt:
-                            break
-            
-                        tokens = nxt.split()
-            
-                        mid = len(tokens) // 2
-            
-                        pet_part += " " + " ".join(tokens[:mid])
-                        res_part += " " + " ".join(tokens[mid:])
-            
-                        j += 1
+                
+                    left_next, right_next = italic_rows[j]
+                
+                    if (
+                        "PET:" in left_next
+                        or "RES:" in right_next
+                    ):
+                        break
+                
+                    if left_next.strip():
+                        pet_part += " " + left_next.strip()
+                
+                    if right_next.strip():
+                        res_part += " " + right_next.strip()
+                
+                    j += 1
             
                     italic_pairs.append(
                         (
