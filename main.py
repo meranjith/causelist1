@@ -362,20 +362,20 @@ def process_pdf(pdf_path, advocate):
 
                     if italic_pairs:
 
-                    petitioner = italic_pairs[0][0]
-                    respondent = italic_pairs[0][1]
+                        petitioner = italic_pairs[0][0]
+                        respondent = italic_pairs[0][1]
+                    
+                        italic_pairs.pop(0)
                 
-                    italic_pairs.pop(0)
-                
-                else:
-                
-                    petitioner = extract_petitioner(
-                        pet_col
-                    )
-                
-                    respondent = extract_respondent(
-                        res_col
-                    )
+                    else:
+                    
+                        petitioner = extract_petitioner(
+                            pet_col
+                        )
+                    
+                        respondent = extract_respondent(
+                            res_col
+                        )
 
                     bold_side = ""
 
