@@ -304,40 +304,52 @@ def process_pdf(pdf_path, advocate):
 
                     bold_side = ""
 
+                    pet_text = str(pet_col).upper()
+                    res_text = str(res_col).upper()
                     row_text_upper = row_text.upper()
                     
                     adv_tokens = advocate.upper().split()
                     
-                    found_advocate = all(
-                        token in row_text_upper
+                    pet_match = all(
+                        token in pet_text
                         for token in adv_tokens
                     )
                     
-                    if found_advocate:
+                    res_match = all(
+                        token in res_text
+                        for token in adv_tokens
+                    )
                     
-                        if "FOR R" in row_text_upper:
-                            bold_side = "RES"
+                    if pet_match:
+                        bold_side = "PET"
                     
-                        elif "FOR RESPONDENT" in row_text_upper:
-                            bold_side = "RES"
+                    elif res_match:
+                        bold_side = "RES"
                     
-                        elif "FOR P" in row_text_upper:
-                            bold_side = "PET"
+                    else:
                     
-                        elif "FOR PETITIONER" in row_text_upper:
-                            bold_side = "PET"
-                    
-                        elif all(
-                            token in str(pet_col).upper()
+                        advocate_found = all(
+                            token in row_text_upper
                             for token in adv_tokens
-                        ):
-                            bold_side = "PET"
+                        )
                     
-                        elif all(
-                            token in str(res_col).upper()
-                            for token in adv_tokens
-                        ):
-                            bold_side = "RES"
+                        if advocate_found:
+                    
+                            pet_pos = row_text_upper.find("PET:")
+                            res_pos = row_text_upper.find("RES:")
+                    
+                            mahesh_pos = max(
+                                row_text_upper.find(token)
+                                for token in adv_tokens
+                            )
+                    
+                            if pet_pos != -1 and mahesh_pos > pet_pos and (
+                                res_pos == -1 or mahesh_pos < res_pos
+                            ):
+                                bold_side = "PET"
+                    
+                            elif res_pos != -1 and mahesh_pos > res_pos:
+                                bold_side = "RES"
 
                     if case_number == "WP 20069/2021":
                         print("CASE =", case_number)
