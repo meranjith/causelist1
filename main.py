@@ -337,12 +337,12 @@ def process_pdf(pdf_path, advocate):
                                 bold_side = "PET"
 
                     if case_number == "WP 20069/2021":
-                    print("CASE =", case_number)
-                    print("ADVOCATE =", advocate.upper())
-                    print("PET COL =", pet_col)
-                    print("RES COL =", res_col)
-                    print("ROW TEXT =", row_text)
-                    print("BOLD SIDE =", bold_side)
+                        print("CASE =", case_number)
+                        print("ADVOCATE =", advocate.upper())
+                        print("PET COL =", pet_col)
+                        print("RES COL =", res_col)
+                        print("ROW TEXT =", row_text)
+                        print("BOLD SIDE =", bold_side)
                     
                     records.append({
                         "sl_no": sl_no,
