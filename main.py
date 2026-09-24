@@ -43,6 +43,139 @@ def clean(text):
 
     return text.strip()
 
+def is_italic_char(ch):
+    """
+    Detect whether a PDF character is italic/oblique.
+    Different PDFs/fonts use different font names, so check
+    several common indicators.
+    """
+
+    fontname = str(ch.get("fontname", "")).lower()
+
+    return (
+        "italic" in fontname
+        or "oblique" in fontname
+        or "slanted" in fontname
+    )
+
+
+def extract_italic_from_cell(page, cell_bbox):
+    """
+    Extract only italic text from a PDF table cell.
+
+    cell_bbox:
+        (x0, top, x1, bottom)
+    """
+
+    if not cell_bbox:
+        return ""
+
+    x0, top, x1, bottom = cell_bbox
+
+    chars = []
+
+    for ch in page.chars:
+
+        cx0 = ch.get("x0", 0)
+        cx1 = ch.get("x1", 0)
+        ctop = ch.get("top", 0)
+        cbottom = ch.get("bottom", 0)
+
+        # Character must overlap the cell
+        horizontal_overlap = (
+            cx1 > x0 and
+            cx0 < x1
+        )
+
+        vertical_overlap = (
+            cbottom > top and
+            ctop < bottom
+        )
+
+        if not horizontal_overlap or not vertical_overlap:
+            continue
+
+        if is_italic_char(ch):
+            chars.append(ch)
+
+    if not chars:
+        return ""
+
+    # Sort characters in reading order
+    chars.sort(
+        key=lambda c: (
+            round(c.get("top", 0), 1),
+            c.get("x0", 0)
+        )
+    )
+
+    # Reconstruct lines based on vertical position
+    lines = []
+
+    current_line = []
+    current_top = None
+
+    for ch in chars:
+
+        char_top = ch.get("top", 0)
+
+        if current_top is None:
+            current_top = char_top
+
+        # New line
+        elif abs(char_top - current_top) > 3:
+            if current_line:
+                lines.append(current_line)
+
+            current_line = []
+            current_top = char_top
+
+        current_line.append(ch)
+
+    if current_line:
+        lines.append(current_line)
+
+    result_lines = []
+
+    for line_chars in lines:
+
+        line_chars.sort(
+            key=lambda c: c.get("x0", 0)
+        )
+
+        text = ""
+
+        previous_x1 = None
+
+        for ch in line_chars:
+
+            char = ch.get("text", "")
+
+            if not char:
+                continue
+
+            x0_char = ch.get("x0", 0)
+
+            # Insert a space where there is a visible gap
+            # between words.
+            if (
+                previous_x1 is not None
+                and x0_char - previous_x1 > 2
+                and not text.endswith(" ")
+            ):
+                text += " "
+
+            text += char
+
+            previous_x1 = ch.get("x1", x0_char)
+
+        text = clean(text)
+
+        if text:
+            result_lines.append(text)
+
+    return "\n".join(result_lines)
+
 
 def get_advocate_name(filename):
     return (
@@ -216,13 +349,240 @@ def process_pdf(pdf_path, advocate):
     with pdfplumber.open(pdf_path) as pdf:
 
         for page in pdf.pages:
-
-            tables = page.extract_tables()
-
-            if not tables:
+        
+            table_objects = page.find_tables()
+        
+            if not table_objects:
                 continue
-
-            for table in tables:
+        
+            for table_obj in table_objects:
+        
+                table = table_obj.extract()
+        
+                if not table:
+                    continue
+        
+                for row_index, row in enumerate(table):
+        
+                    if not row:
+                        continue
+        
+                    row_text = " ".join(
+                        str(x)
+                        for x in row
+                        if x
+                    )
+        
+                    upper_text = row_text.upper()
+        
+                    if "THE HON" in upper_text:
+                        current_judge = clean(row_text)
+        
+                    if "COURT HALL NO" in upper_text:
+        
+                        ch_match = re.search(
+                            r"COURT HALL NO\s*:\s*(\d+)",
+                            row_text,
+                            re.I
+                        )
+        
+                        list_match = re.search(
+                            r"CAUSE LIST NO\.?\s*(\d+)",
+                            row_text,
+                            re.I
+                        )
+        
+                        if ch_match:
+                            current_ch = ch_match.group(1)
+        
+                        if list_match:
+                            current_list = list_match.group(1)
+        
+                    status_keywords = [
+                        "PRELIMINARY HEARING",
+                        "ADMISSION",
+                        "ORDERS",
+                        "FURTHER HEARING",
+                        "HEARING -",
+                    ]
+        
+                    for keyword in status_keywords:
+                        if keyword in upper_text:
+                            current_status = clean(row_text)
+        
+                    if len(row) < 6:
+                        continue
+        
+                    sl_no = clean(row[0])
+        
+                    if not sl_no.isdigit():
+                        continue
+        
+                    case_number = extract_case_number(
+                        row[1]
+                    )
+        
+                    pet_col = row[3] if len(row) > 3 else ""
+                    res_col = row[5] if len(row) > 5 else ""
+        
+                    # --------------------------------------------------
+                    # GET ACTUAL PETITIONER / RESPONDENT FROM ITALICS
+                    # --------------------------------------------------
+        
+                    pet_bbox = None
+                    res_bbox = None
+        
+                    if row_index < len(table_obj.rows):
+        
+                        cells = table_obj.rows[row_index].cells
+        
+                        if cells:
+        
+                            if len(cells) > 3:
+                                pet_bbox = cells[3]
+        
+                            if len(cells) > 5:
+                                res_bbox = cells[5]
+        
+                    petitioner = extract_italic_from_cell(
+                        page,
+                        pet_bbox
+                    )
+        
+                    respondent = extract_italic_from_cell(
+                        page,
+                        res_bbox
+                    )
+        
+                    # Fallback to your old extraction if italic
+                    # extraction did not find anything.
+                    if not petitioner:
+                        petitioner = extract_petitioner(
+                            pet_col
+                        )
+        
+                    if not respondent:
+                        respondent = extract_respondent(
+                            res_col
+                        )
+        
+                    # Remove PET:/RES: if they happen to be italic
+                    petitioner = re.sub(
+                        r"^\s*PET\s*:\s*",
+                        "",
+                        petitioner,
+                        flags=re.I
+                    )
+        
+                    respondent = re.sub(
+                        r"^\s*RES\s*:\s*",
+                        "",
+                        respondent,
+                        flags=re.I
+                    )
+        
+                    petitioner = strip_advocates(
+                        petitioner
+                    )
+        
+                    respondent = strip_advocates(
+                        respondent
+                    )
+        
+                    # --------------------------------------------------
+                    # DETERMINE WHICH SIDE THE ADVOCATE IS ON
+                    # --------------------------------------------------
+        
+                    bold_side = ""
+        
+                    pet_text = str(pet_col).upper()
+                    res_text = str(res_col).upper()
+                    row_text_upper = row_text.upper()
+        
+                    adv_tokens = advocate.upper().split()
+        
+                    pet_match = all(
+                        token in pet_text
+                        for token in adv_tokens
+                    )
+        
+                    res_match = all(
+                        token in res_text
+                        for token in adv_tokens
+                    )
+        
+                    if pet_match:
+                        bold_side = "PET"
+        
+                    elif res_match:
+                        bold_side = "RES"
+        
+                    else:
+        
+                        advocate_found = all(
+                            token in row_text_upper
+                            for token in adv_tokens
+                        )
+        
+                        if advocate_found:
+        
+                            pet_pos = row_text_upper.find("PET:")
+                            res_pos = row_text_upper.find("RES:")
+        
+                            mahesh_pos = max(
+                                row_text_upper.find(token)
+                                for token in adv_tokens
+                            )
+        
+                            if (
+                                pet_pos != -1
+                                and mahesh_pos > pet_pos
+                                and (
+                                    res_pos == -1
+                                    or mahesh_pos < res_pos
+                                )
+                            ):
+                                bold_side = "PET"
+        
+                            elif (
+                                res_pos != -1
+                                and mahesh_pos > res_pos
+                            ):
+                                bold_side = "RES"
+        
+                    if case_number == "WP 20069/2021":
+        
+                        print("CASE =", case_number)
+                        print("ADVOCATE =", advocate.upper())
+                        print("PET COL =", pet_col)
+                        print("RES COL =", res_col)
+        
+                        print(
+                            "ITALIC PET =",
+                            petitioner
+                        )
+        
+                        print(
+                            "ITALIC RES =",
+                            respondent
+                        )
+        
+                        print(
+                            "BOLD SIDE =",
+                            bold_side
+                        )
+        
+                    records.append({
+                        "sl_no": sl_no,
+                        "case_number": case_number,
+                        "petitioner": petitioner,
+                        "respondent": respondent,
+                        "bold_side": bold_side,
+                        "ch": current_ch,
+                        "list": current_list,
+                        "status": current_status,
+                        "judge": current_judge,
+                    })
 
                 for row in table:
 
