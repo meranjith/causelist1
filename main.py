@@ -292,12 +292,12 @@ def process_pdf(pdf_path, advocate):
                     pet_part = left_text.replace(
                     "PET:",
                     ""
-                ).strip()
-                
-                res_part = right_text.replace(
-                    "RES:",
-                    ""
-                ).strip()
+                    ).strip()
+                    
+                    res_part = right_text.replace(
+                        "RES:",
+                        ""
+                    ).strip()
             
                     pet_part = pet_part.replace(
                         "PET:",
