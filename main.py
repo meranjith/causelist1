@@ -244,11 +244,6 @@ def build_case_name(row):
 
 
 def process_pdf(pdf_path, advocate):
-
-    italic_rows = extract_case_name_blocks(page)
-    
-    for row in italic_rows:
-        print(row)
     
     print("Processing:", pdf_path)
 
@@ -260,6 +255,10 @@ def process_pdf(pdf_path, advocate):
     with pdfplumber.open(pdf_path) as pdf:
 
         for page in pdf.pages:
+            italic_rows = extract_case_name_blocks(page)
+            
+            for row in italic_rows:
+                print(row)
 
             tables = page.extract_tables()
 
