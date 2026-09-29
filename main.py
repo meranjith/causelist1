@@ -697,6 +697,11 @@ def main():
         print("NO RECORDS FOUND")
         return
 
+    # Sort all records by Court Hall (CH)
+    records.sort(
+        key=lambda row: int(row["ch"]) if str(row["ch"]).isdigit() else 9999
+    )
+
     generate_pdf()
 
     print("PDF CREATED:", OUTPUT_FILE)
