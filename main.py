@@ -2,6 +2,11 @@ import os
 import re
 import pdfplumber
 
+from docx import Document
+from docx.shared import Inches, Pt
+from docx.enum.section import WD_ORIENT
+from docx.enum.text import WD_ALIGN_PARAGRAPH
+from docx.enum.table import WD_TABLE_ALIGNMENT, WD_CELL_VERTICAL_ALIGNMENT
 from reportlab.lib import colors
 from reportlab.lib.pagesizes import landscape, A4
 from reportlab.lib.styles import getSampleStyleSheet
@@ -14,6 +19,7 @@ from reportlab.platypus import (
 
 INPUT_FOLDER = "input"
 OUTPUT_FILE = "Consolidated_Cause_List.pdf"
+WORD_OUTPUT_FILE = "Consolidated_Cause_List.docx"
 
 ADVOCATE_NAMES = [
     "MAHESH CHOWDHARY",
@@ -661,6 +667,154 @@ def generate_pdf():
 
     doc.build([table])
 
+def generate_word():
+
+    doc = Document()
+
+    # Landscape A4
+    section = doc.sections[0]
+    section.orientation = WD_ORIENT.LANDSCAPE
+    section.page_width = Inches(11.69)
+    section.page_height = Inches(8.27)
+
+    # Margins
+    section.left_margin = Inches(0.3)
+    section.right_margin = Inches(0.3)
+    section.top_margin = Inches(0.3)
+    section.bottom_margin = Inches(0.3)
+
+    headers = [
+        "SL NO",
+        "CASE NUMBER",
+        "CASE NAME",
+        "CH",
+        "LIST",
+        "SL NO",
+        "STATUS",
+        "JUDGES"
+    ]
+
+    table = doc.add_table(
+        rows=1,
+        cols=len(headers)
+    )
+
+    table.style = "Table Grid"
+    table.alignment = WD_TABLE_ALIGNMENT.CENTER
+
+    # ---------------------------------------------
+    # HEADER
+    # ---------------------------------------------
+
+    header_cells = table.rows[0].cells
+
+    for i, header in enumerate(headers):
+
+        cell = header_cells[i]
+        cell.text = header
+
+        cell.vertical_alignment = WD_CELL_VERTICAL_ALIGNMENT.CENTER
+
+        for paragraph in cell.paragraphs:
+            paragraph.alignment = WD_ALIGN_PARAGRAPH.CENTER
+
+            for run in paragraph.runs:
+                run.bold = True
+                run.font.size = Pt(8)
+
+    # ---------------------------------------------
+    # DATA
+    # ---------------------------------------------
+
+    for idx, row in enumerate(records, start=1):
+
+        cells = table.add_row().cells
+
+        values = [
+            str(idx),
+            row["case_number"],
+            None,                 # CASE NAME handled separately
+            row["ch"],
+            row["list"],
+            row["sl_no"],
+            row["status"],
+            row["judge"]
+        ]
+
+        # Normal cells
+        cells[0].text = values[0]
+        cells[1].text = values[1]
+        cells[3].text = values[3]
+        cells[4].text = values[4]
+        cells[5].text = values[5]
+        cells[6].text = values[6]
+        cells[7].text = values[7]
+
+        # -----------------------------------------
+        # CASE NAME
+        # -----------------------------------------
+
+        case_cell = cells[2]
+
+        # Clear default paragraph
+        paragraph = case_cell.paragraphs[0]
+
+        pet = row["petitioner"]
+        res = row["respondent"]
+
+        # Petitioner
+        run = paragraph.add_run(pet)
+
+        if row["bold_side"] == "PET":
+            run.bold = True
+
+        # VS
+        paragraph.add_run("\nvs\n")
+
+        # Respondent
+        run = paragraph.add_run(res)
+
+        if row["bold_side"] == "RES":
+            run.bold = True
+
+        # -----------------------------------------
+        # FORMATTING
+        # -----------------------------------------
+
+        for cell in cells:
+
+            cell.vertical_alignment = WD_CELL_VERTICAL_ALIGNMENT.TOP
+
+            for paragraph in cell.paragraphs:
+
+                for run in paragraph.runs:
+                    run.font.size = Pt(8)
+
+    # ---------------------------------------------
+    # COLUMN WIDTHS
+    # ---------------------------------------------
+
+    widths = [
+        0.45,
+        1.0,
+        2.6,
+        0.45,
+        0.5,
+        0.5,
+        1.7,
+        2.0
+    ]
+
+    for row in table.rows:
+
+        for i, width in enumerate(widths):
+
+            row.cells[i].width = Inches(width)
+
+    doc.save(WORD_OUTPUT_FILE)
+
+    print("WORD CREATED:", WORD_OUTPUT_FILE)
+
 
 def main():
 
@@ -704,7 +858,11 @@ def main():
 
     generate_pdf()
 
+    # Generate Word document
+    generate_word()
+
     print("PDF CREATED:", OUTPUT_FILE)
+    print("WORD CREATED:", WORD_OUTPUT_FILE)
 
 
 if __name__ == "__main__":
