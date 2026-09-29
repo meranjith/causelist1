@@ -1,2 +1,3 @@
 pdfplumber
 reportlab
+python-docx
