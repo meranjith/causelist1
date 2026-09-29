@@ -21,4 +21,6 @@ jobs:
       - uses: actions/upload-artifact@v4
         with:
           name: ConsolidatedCauseList
-          path: Consolidated_Cause_List.pdf
+          path: |
+            Consolidated_Cause_List.pdf
+            Consolidated_Cause_List.docx
